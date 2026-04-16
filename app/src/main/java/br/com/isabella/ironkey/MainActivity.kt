@@ -29,6 +29,10 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -83,13 +87,19 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
 
     // Checkboxes
     var includeUppercase by remember {
-        mutableStateOf(true) }
+        mutableStateOf(true)
+    }
     var includeLowercase by remember {
-        mutableStateOf(true) }
+        mutableStateOf(true)
+    }
     var includeNumbers by remember {
-        mutableStateOf(true) }
+        mutableStateOf(true)
+    }
     var includeSymbols by remember {
-        mutableStateOf(false) }
+        mutableStateOf(false)
+    }
+
+    var passwordComplexity by remember { mutableStateOf(PasswordComplexity.MEDIUM) }
 
     Column(
         modifier = modifier
@@ -124,7 +134,7 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(8.dp)
-        ){
+        ) {
             Column {
                 OutlinedTextField(
                     value = generatedPassword,
@@ -155,9 +165,11 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
                     }
                 )
 
-                Text("${generatedPassword.length} / $maxCharacters",
+                Text(
+                    "${generatedPassword.length} / $maxCharacters",
                     style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier
+                        .align(Alignment.End)
                         .padding(end = 8.dp, top = 4.dp)
                 )
 
@@ -165,31 +177,33 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
 
                 Text("Tipo de senha")
 
-                Row (
+                Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
-                ){
-                    Row (
+                ) {
+                    Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
                             .clickable { passwordType = PasswordType.PIN }
 
-                    ){
+                    ) {
                         RadioButton(
                             selected = passwordType == PasswordType.PIN,
-                            onClick = {passwordType = PasswordType.PIN}
+                            onClick = { passwordType = PasswordType.PIN }
                         )
                         Text("PIN")
                     }
 
-                    Row (
+                    Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                            .clickable { passwordType = PasswordType.STANDARD}
-                    ){
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { passwordType = PasswordType.STANDARD }
+                    ) {
                         RadioButton(
                             selected = passwordType == PasswordType.STANDARD,
-                            onClick = {passwordType = PasswordType.STANDARD}
+                            onClick = { passwordType = PasswordType.STANDARD }
                         )
                         Text("Padrão")
                     }
@@ -201,17 +215,18 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Row (
+                Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(vertical = 8.dp)
-                ){
+                ) {
                     Icon(
                         imageVector = if (isEditable) Icons.Default.LockOpen else Icons.Filled.Lock,
                         contentDescription = ""
                     )
-                    Text("Pertmitir editar senha?", modifier = Modifier.padding(horizontal = 8.dp))
+                    Text("Permitir editar senha?", modifier = Modifier.padding(horizontal = 8.dp))
                     Spacer(modifier = Modifier.weight(1f))
-                    Switch(checked = isEditable, onCheckedChange = {isEditable = it})
+                    Switch(checked = isEditable, onCheckedChange = { isEditable = it })
+
 
                 }
 
@@ -224,65 +239,88 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                if (isEditable){
+                if (isEditable) {
+
+                    Text("Complexidade da senha")
+                    PasswordComplexityDropdown(selectComplexity = passwordComplexity) {
+                        passwordComplexity = it
+                        maxCharacters =
+                            (passwordComplexity.maxLenght + passwordComplexity.minLenght) / 2
+                    }
+
                     Text("Tamanho da senha ${maxCharacters}")
                     Slider(
                         value = maxCharacters.toFloat(),
-                        onValueChange = {maxCharacters = it.toInt()},
-                        valueRange = 4.toFloat()..12.toFloat(),
+                        onValueChange = { maxCharacters = it.toInt() },
+                        valueRange = passwordComplexity.minLenght.toFloat()..passwordComplexity.maxLenght.toFloat(),
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment
-                    = Alignment.CenterVertically) {
+                    if (passwordType == PasswordType.STANDARD) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.fillMaxWidth(), verticalAlignment
+                            = Alignment.CenterVertically
                         ) {
-                            Checkbox(
-                                checked = includeUppercase,
-                                onCheckedChange = { includeUppercase = it }
-                            )
-                            Text("Maiúsculas")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { includeUppercase = !includeUppercase }
+                            ) {
+                                Checkbox(
+                                    checked = includeUppercase,
+                                    onCheckedChange = { includeUppercase = it }
+                                )
+                                Text("Maiúsculas")
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { includeLowercase = !includeLowercase }
+                            ) {
+                                Checkbox(
+                                    checked = includeLowercase,
+                                    onCheckedChange = { includeLowercase = it }
+                                )
+                                Text("Minúsculas")
+                            }
                         }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Checkbox(
-                                checked = includeLowercase,
-                                onCheckedChange = { includeLowercase = it }
-                            )
-                            Text("Minúsculas")
-                        }
-                    }
 
-                    Row(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Checkbox(checked = includeNumbers,
-                                onCheckedChange = { includeNumbers = it }
-                            )
-                            Text("Números")
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Checkbox(
-                                checked = includeSymbols,
-                                onCheckedChange = { includeSymbols = it }
-                            )
-                            Text("Símbolos")
-                        }
-                    }
 
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Checkbox(
+                                    checked = includeNumbers,
+                                    onCheckedChange = { includeNumbers = it }
+                                )
+                                Text("Números")
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { includeNumbers = !includeNumbers }
+                            ) {
+                                Checkbox(
+                                    checked = includeSymbols,
+                                    onCheckedChange = { includeSymbols = it }
+                                )
+                                Text("Símbolos")
+                            }
+                        }
+
+                    }
                 }
+
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -290,20 +328,21 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
 
-                        val generator : PasswordGenerator =
+                        val generator: PasswordGenerator =
                             if (passwordType == PasswordType.PIN) PinPasswordGenerator()
-                            else(
-                                StandardPasswordGenerator(
-                                    includeUppercase = includeUppercase,
-                                    includeLowercase = includeLowercase,
-                                    includeNumbers = includeNumbers,
-                                    includeSymbols = includeSymbols
-                                )
+                            else (
+                                    StandardPasswordGenerator(
+                                        includeUppercase = includeUppercase,
+                                        includeLowercase = includeLowercase,
+                                        includeNumbers = includeNumbers,
+                                        includeSymbols = includeSymbols
+                                    )
 
-                            )
+                                    )
 
                         generatedPassword = generator.generate(maxCharacters)
                     }
+
                 ) {
                     Text("Gerar senha")
                 }
@@ -326,20 +365,32 @@ fun copyPassword(context: Context, password: String) {
                 ClipboardManager
     val clip = ClipData.newPlainText("Senha", password)
     clipboardManager.setPrimaryClip(clip)
-    Toast.makeText(context, "Senha copiada!",
-        Toast.LENGTH_SHORT).show()
+    Toast.makeText(
+        context, "Senha copiada!",
+        Toast.LENGTH_SHORT
+    ).show()
 }
 
-enum class PasswordType{
+enum class PasswordType {
     PIN,
     STANDARD
 }
 
-interface PasswordGenerator{
+enum class PasswordComplexity(
+    val title: String,
+    val minLenght: Int,
+    val maxLenght: Int
+) {
+    Low("Baixa", 4, 6),
+    MEDIUM("Média", 4, 10),
+    HIGH("Alta", 4, 16)
+}
+
+interface PasswordGenerator {
     fun generate(length: Int): String
 }
 
-class PinPasswordGenerator : PasswordGenerator{
+class PinPasswordGenerator : PasswordGenerator {
     override fun generate(length: Int): String {
 
         val digits = ('0'..'9')
@@ -367,5 +418,50 @@ class StandardPasswordGenerator(
         return (1..length)
             .map { chars.random() }
             .joinToString("")
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PasswordComplexityDropdown(
+    selectComplexity: PasswordComplexity,
+    onComplexitySelected: (PasswordComplexity) -> Unit
+) {
+
+    var expanded by remember { mutableStateOf(false) }
+    Spacer(modifier = Modifier.height(20.dp))
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectComplexity.title,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Complexidade da senha") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor()
+        )
+
+        // fecha o menu clicando em qualquer parte da tela
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            PasswordComplexity.entries.forEach { complecity ->
+                DropdownMenuItem(
+                    text = { Text(complecity.title) },
+                    onClick = {
+                        onComplexitySelected(complecity)
+                        expanded = false
+                    }
+                )
+
+
+            }
+        }
     }
 }
