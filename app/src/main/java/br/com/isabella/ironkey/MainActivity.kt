@@ -308,7 +308,7 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clickable { includeNumbers = !includeNumbers }
+                                    .clickable { includeSymbols = !includeSymbols }
                             ) {
                                 Checkbox(
                                     checked = includeSymbols,
@@ -328,19 +328,41 @@ fun IronKeyForm(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
 
+                        if (isEditable && passwordType == PasswordType.STANDARD &&
+                            !includeUppercase && !includeLowercase && !includeNumbers && !includeSymbols
+                        ) {
+                            Toast.makeText(
+                                context,
+                                "Selecione pelo menos uma opção de caracteres!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@Button
+                        }
+
+                        val length = if (isEditable) {
+                            maxCharacters
+                        } else {
+                            (passwordComplexity.minLenght..passwordComplexity.maxLenght).random()
+                        }
+
+
                         val generator: PasswordGenerator =
                             if (passwordType == PasswordType.PIN) PinPasswordGenerator()
-                            else (
+                            else {
+                                if (isEditable) {
                                     StandardPasswordGenerator(
                                         includeUppercase = includeUppercase,
                                         includeLowercase = includeLowercase,
                                         includeNumbers = includeNumbers,
                                         includeSymbols = includeSymbols
                                     )
+                                } else {
+                                    StandardPasswordGenerator()
+                                }
+                            }
 
-                                    )
-
-                        generatedPassword = generator.generate(maxCharacters)
+                        generatedPassword = generator.generate(length)
+                        maxCharacters = length
                     }
 
                 ) {
